@@ -19,7 +19,6 @@ class AuthRepository implements AuthRepositoryInterface
     public function register(array $registerData): User
     {
         try {
-            // Password is hashed automatically by the 'hashed' cast on the User model
             return User::create([
                 'name' => $registerData['name'],
                 'email' => $registerData['email'],
