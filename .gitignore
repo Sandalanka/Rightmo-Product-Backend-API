@@ -1,0 +1,59 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies
+/vendor
+/node_modules
+composer.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build / public generated files
+/public/build
+/public/hot
+/public/storage
+/public/fonts-manifest.dev.json
+
+# Storage & cache
+/storage/*.key
+/storage/pail
+/bootstrap/cache/*.php
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Testing
+.phpunit.result.cache
+/.phpunit.cache
+/coverage
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# IDE / editor
+/.idea
+/.vscode
+/.zed
+/.cursor/
+/.codex
+/.nova
+.phpactor.json
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Misc
+/auth.json
+Homestead.json
+Homestead.yaml
