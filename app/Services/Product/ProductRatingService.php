@@ -7,6 +7,7 @@ use App\Constants\CacheConstant;
 use App\Contracts\Product\ProductRatingRepositoryInterface;
 use App\Contracts\Product\ProductRepositoryInterface;
 use App\Http\Resources\Product\ProductRatingResource;
+use App\Models\ProductRating;
 use Exception;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -52,10 +53,10 @@ class ProductRatingService
     }
 
     /**
-     * Summery: Rate a product (a second rating by the same user updates the first)
+     * Summery: Rate a product (a user may rate the same product several times)
      *
      * @param  array{rating: int, comment?: ?string}  $ratingData
-     * @return array{rating: array<string, mixed>, created: bool}|null
+     * @return array<string, mixed>|null
      *
      * @throws Exception
      */
@@ -66,14 +67,11 @@ class ProductRatingService
                 return null;
             }
 
-            $productRating = $this->productRatingRepository->updateOrCreate($productId, $userId, $ratingData);
+            $productRating = $this->productRatingRepository->create($productId, $userId, $ratingData);
 
             $this->flushCacheAfterCommit();
 
-            return [
-                'rating' => (new ProductRatingResource($productRating->load('user:id,name')))->response()->getData(true)['data'],
-                'created' => $productRating->wasRecentlyCreated,
-            ];
+            return $this->toArray($productRating);
 
         } catch (Exception $exception) {
             ApiCatchErrors::throw($exception,
@@ -85,24 +83,61 @@ class ProductRatingService
     }
 
     /**
-     * Summery: Delete the rating a user gave a product
+     * Summery: Find a rating that belongs to a product
      *
      * @throws Exception
      */
-    public function delete(int $productId, int $userId): bool
+    public function findForProduct(int $productId, int $ratingId): ?ProductRating
     {
         try {
-            $productRating = $this->productRatingRepository->findForUser($productId, $userId);
+            return $this->productRatingRepository->findForProduct($productId, $ratingId);
 
-            if ($productRating === null) {
-                return false;
-            }
+        } catch (Exception $exception) {
+            ApiCatchErrors::throw($exception,
+                'An error occurred while fetching a product rating-(service): '
+            );
 
-            $this->productRatingRepository->delete($productRating);
+            throw $exception;
+        }
+    }
+
+    /**
+     * Summery: Update a rating
+     *
+     * @param  array{rating?: int, comment?: ?string}  $ratingData
+     * @return array<string, mixed>
+     *
+     * @throws Exception
+     */
+    public function update(ProductRating $productRating, array $ratingData): array
+    {
+        try {
+            $productRating = $this->productRatingRepository->update($productRating, $ratingData);
 
             $this->flushCacheAfterCommit();
 
-            return true;
+            return $this->toArray($productRating);
+
+        } catch (Exception $exception) {
+            ApiCatchErrors::throw($exception,
+                'An error occurred while updating a product rating-(service): '
+            );
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Summery: Delete a rating
+     *
+     * @throws Exception
+     */
+    public function delete(ProductRating $productRating): void
+    {
+        try {
+            $this->productRatingRepository->delete($productRating);
+
+            $this->flushCacheAfterCommit();
 
         } catch (Exception $exception) {
             ApiCatchErrors::throw($exception,
@@ -111,6 +146,16 @@ class ProductRatingService
 
             throw $exception;
         }
+    }
+
+    /**
+     * Summery: Convert a rating to its API representation
+     *
+     * @return array<string, mixed>
+     */
+    protected function toArray(ProductRating $productRating): array
+    {
+        return (new ProductRatingResource($productRating->load('user:id,name')))->response()->getData(true)['data'];
     }
 
     /**

@@ -22,6 +22,8 @@ class UnauthenticatedTest extends TestCase
             'products' => ['GET', '/api/v1/products'],
             'delete product' => ['DELETE', '/api/v1/products/1'],
             'product ratings' => ['GET', '/api/v1/products/1/ratings'],
+            'update rating' => ['PUT', '/api/v1/products/1/ratings/1'],
+            'delete rating' => ['DELETE', '/api/v1/products/1/ratings/1'],
         ];
     }
 
