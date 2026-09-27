@@ -33,7 +33,8 @@ Route::prefix('v1')->group(function () {
 
             Route::get('{productId}/ratings', [ProductRatingController::class, 'index'])->whereNumber('productId');
             Route::post('{productId}/ratings', [ProductRatingController::class, 'store'])->whereNumber('productId');
-            Route::delete('{productId}/ratings', [ProductRatingController::class, 'destroy'])->whereNumber('productId');
+            Route::put('{productId}/ratings/{ratingId}', [ProductRatingController::class, 'update'])->whereNumber(['productId', 'ratingId']);
+            Route::delete('{productId}/ratings/{ratingId}', [ProductRatingController::class, 'destroy'])->whereNumber(['productId', 'ratingId']);
         });
     });
 });

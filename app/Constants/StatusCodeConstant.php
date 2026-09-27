@@ -12,6 +12,8 @@ class StatusCodeConstant
     // Client error status codes
     const UNAUTHORIZED = 401;
 
+    const FORBIDDEN = 403;
+
     const NOT_FOUND = 404;
 
     const UNPROCESSABLE_ENTITY = 422;

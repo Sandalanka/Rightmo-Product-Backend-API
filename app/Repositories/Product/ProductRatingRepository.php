@@ -39,23 +39,25 @@ class ProductRatingRepository implements ProductRatingRepositoryInterface
     }
 
     /**
-     * Summery: Create or update the rating a user gave a product
+     * Summery: Create a rating a user gave a product
      *
-     * @param  array
+     * @param  array{rating: int, comment?: ?string}  $ratingData
      *
      * @throws Exception
      */
-    public function updateOrCreate(int $productId, int $userId, array $ratingData): ProductRating
+    public function create(int $productId, int $userId, array $ratingData): ProductRating
     {
         try {
-            return ProductRating::updateOrCreate(
-                ['product_id' => $productId, 'user_id' => $userId],
-                ['rating' => $ratingData['rating'], 'comment' => $ratingData['comment'] ?? null]
-            );
+            return ProductRating::create([
+                'product_id' => $productId,
+                'user_id' => $userId,
+                'rating' => $ratingData['rating'],
+                'comment' => $ratingData['comment'] ?? null,
+            ]);
 
         } catch (Exception $exception) {
             ApiCatchErrors::throw($exception,
-                'An error occurred while saving a product rating-(repository): '
+                'An error occurred while creating a product rating-(repository): '
             );
 
             throw $exception;
@@ -63,21 +65,43 @@ class ProductRatingRepository implements ProductRatingRepositoryInterface
     }
 
     /**
-     * Summery: Find the rating a user gave a product
+     * Summery: Find a rating that belongs to a product
      *
      * @throws Exception
      */
-    public function findForUser(int $productId, int $userId): ?ProductRating
+    public function findForProduct(int $productId, int $ratingId): ?ProductRating
     {
         try {
             return ProductRating::query()
                 ->where('product_id', $productId)
-                ->where('user_id', $userId)
-                ->first();
+                ->find($ratingId);
 
         } catch (Exception $exception) {
             ApiCatchErrors::throw($exception,
                 'An error occurred while fetching a product rating-(repository): '
+            );
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Summery: Update a rating
+     *
+     * @param  array{rating?: int, comment?: ?string}  $ratingData
+     *
+     * @throws Exception
+     */
+    public function update(ProductRating $productRating, array $ratingData): ProductRating
+    {
+        try {
+            $productRating->update($ratingData);
+
+            return $productRating;
+
+        } catch (Exception $exception) {
+            ApiCatchErrors::throw($exception,
+                'An error occurred while updating a product rating-(repository): '
             );
 
             throw $exception;
