@@ -133,4 +133,19 @@ return [
 
     'serializable_classes' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cache TTL (seconds)
+    |--------------------------------------------------------------------------
+    |
+    | How long API responses are cached. Product caches are also invalidated
+    | on every product, image or rating change.
+    |
+    */
+
+    'ttl' => [
+        'products' => (int) env('CACHE_PRODUCT_TTL', 600),
+        'categories' => (int) env('CACHE_CATEGORY_TTL', 3600),
+    ],
+
 ];
