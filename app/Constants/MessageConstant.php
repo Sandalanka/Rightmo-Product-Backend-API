@@ -42,6 +42,8 @@ class MessageConstant
 
     const PRODUCT_RATING_NOT_FOUND = 'Product rating not found.';
 
+    const PRODUCT_RATING_FORBIDDEN = 'You can only change your own ratings.';
+
     // Category messages
     const CATEGORIES_FETCHED = 'Categories fetched successfully.';
 

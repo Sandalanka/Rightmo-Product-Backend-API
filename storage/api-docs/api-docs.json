@@ -1106,7 +1106,7 @@
                     "Product Ratings"
                 ],
                 "summary": "Rate a product",
-                "description": "Each user has one rating per product. Rating the same product again updates the existing rating (200 instead of 201).",
+                "description": "A user may rate the same product several times; every call creates a new rating.",
                 "operationId": "productRatingStore",
                 "parameters": [
                     {
@@ -1167,8 +1167,75 @@
                             }
                         }
                     },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthenticated"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ProductNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationError"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/ServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/products/{productId}/ratings/{ratingId}": {
+            "put": {
+                "tags": [
+                    "Product Ratings"
+                ],
+                "summary": "Update one of your ratings",
+                "description": "Only the user who wrote the rating can update it. Send only the fields to change.",
+                "operationId": "productRatingUpdate",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/ProductId"
+                    },
+                    {
+                        "name": "ratingId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "rating": {
+                                        "type": "integer",
+                                        "example": 4,
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "example": "Still great after a month.",
+                                        "nullable": true,
+                                        "maxLength": 1000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
                     "200": {
-                        "description": "Existing rating updated",
+                        "description": "Rating updated",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1196,8 +1263,51 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
                     },
+                    "403": {
+                        "description": "The rating belongs to another user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        },
+                                        {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "You can only change your own ratings."
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "$ref": "#/components/responses/ProductNotFound"
+                        "description": "The rating does not exist for this product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        },
+                                        {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Product rating not found."
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationError"
@@ -1216,11 +1326,21 @@
                 "tags": [
                     "Product Ratings"
                 ],
-                "summary": "Delete the authenticated user's rating of a product",
+                "summary": "Delete one of your ratings",
+                "description": "Only the user who wrote the rating can delete it.",
                 "operationId": "productRatingDestroy",
                 "parameters": [
                     {
                         "$ref": "#/components/parameters/ProductId"
+                    },
+                    {
+                        "name": "ratingId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -1250,8 +1370,31 @@
                     "401": {
                         "$ref": "#/components/responses/Unauthenticated"
                     },
+                    "403": {
+                        "description": "The rating belongs to another user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/ErrorResponse"
+                                        },
+                                        {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "You can only change your own ratings."
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "description": "The user has not rated this product",
+                        "description": "The rating does not exist for this product",
                         "content": {
                             "application/json": {
                                 "schema": {

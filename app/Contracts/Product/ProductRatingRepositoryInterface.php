@@ -9,9 +9,11 @@ interface ProductRatingRepositoryInterface
 {
     public function getForProduct(int $productId, int $perPage): LengthAwarePaginator;
 
-    public function updateOrCreate(int $productId, int $userId, array $ratingData): ProductRating;
+    public function create(int $productId, int $userId, array $ratingData): ProductRating;
 
-    public function findForUser(int $productId, int $userId): ?ProductRating;
+    public function findForProduct(int $productId, int $ratingId): ?ProductRating;
+
+    public function update(ProductRating $productRating, array $ratingData): ProductRating;
 
     public function delete(ProductRating $productRating): void;
 }

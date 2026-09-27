@@ -8,6 +8,8 @@ use App\Constants\StatusCodeConstant;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\ProductRatingIndexRequest;
 use App\Http\Requests\Product\ProductRatingStoreRequest;
+use App\Http\Requests\Product\ProductRatingUpdateRequest;
+use App\Models\ProductRating;
 use App\Services\Product\ProductRatingService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -60,7 +62,7 @@ class ProductRatingController extends Controller
     }
 
     /**
-     * Summery: Rate a product (rating again updates the user's existing rating)
+     * Summery: Rate a product (a user may rate the same product several times)
      *
      * @throws Throwable
      */
@@ -69,16 +71,16 @@ class ProductRatingController extends Controller
         try {
             DB::beginTransaction();
 
-            $result = $this->productRatingService->rate($productId, $request->user()->id, $request->validated());
+            $rating = $this->productRatingService->rate($productId, $request->user()->id, $request->validated());
 
             DB::commit();
 
-            if ($result !== null) {
+            if ($rating !== null) {
 
                 return $this->successResponse(
-                    data: $result['rating'],
-                    message: $result['created'] ? MessageConstant::PRODUCT_RATED : MessageConstant::PRODUCT_RATING_UPDATED,
-                    statusCode: $result['created'] ? StatusCodeConstant::CREATED : StatusCodeConstant::OK
+                    data: $rating,
+                    message: MessageConstant::PRODUCT_RATED,
+                    statusCode: StatusCodeConstant::CREATED
                 );
             }
 
@@ -98,29 +100,66 @@ class ProductRatingController extends Controller
     }
 
     /**
-     * Summery: Delete the authenticated user's rating of a product
+     * Summery: Update one of the authenticated user's ratings
      *
      * @throws Throwable
      */
-    public function destroy(Request $request, int $productId): JsonResponse
+    public function update(ProductRatingUpdateRequest $request, int $productId, int $ratingId): JsonResponse
     {
         try {
+            $productRating = $this->productRatingService->findForProduct($productId, $ratingId);
+
+            $deniedResponse = $this->denyUnlessOwner($productRating, $request);
+
+            if ($deniedResponse !== null) {
+                return $deniedResponse;
+            }
+
             DB::beginTransaction();
 
-            $isDeleted = $this->productRatingService->delete($productId, $request->user()->id);
+            $rating = $this->productRatingService->update($productRating, $request->validated());
 
             DB::commit();
 
-            if ($isDeleted === true) {
+            return $this->successResponse(
+                data: $rating,
+                message: MessageConstant::PRODUCT_RATING_UPDATED
+            );
 
-                return $this->successResponse(
-                    message: MessageConstant::PRODUCT_RATING_DELETED
-                );
-            }
+        } catch (Exception $exception) {
+            ApiCatchErrors::rollback($exception, 'An error occurred while updating a product rating-(controller): ');
 
             return $this->errorResponse(
-                message: MessageConstant::PRODUCT_RATING_NOT_FOUND,
-                statusCode: StatusCodeConstant::NOT_FOUND
+                exception: $exception,
+                message: MessageConstant::SOMETHING_WENT_WRONG
+            );
+        }
+    }
+
+    /**
+     * Summery: Delete one of the authenticated user's ratings
+     *
+     * @throws Throwable
+     */
+    public function destroy(Request $request, int $productId, int $ratingId): JsonResponse
+    {
+        try {
+            $productRating = $this->productRatingService->findForProduct($productId, $ratingId);
+
+            $deniedResponse = $this->denyUnlessOwner($productRating, $request);
+
+            if ($deniedResponse !== null) {
+                return $deniedResponse;
+            }
+
+            DB::beginTransaction();
+
+            $this->productRatingService->delete($productRating);
+
+            DB::commit();
+
+            return $this->successResponse(
+                message: MessageConstant::PRODUCT_RATING_DELETED
             );
 
         } catch (Exception $exception) {
@@ -131,5 +170,27 @@ class ProductRatingController extends Controller
                 message: MessageConstant::SOMETHING_WENT_WRONG
             );
         }
+    }
+
+    /**
+     * Summery: 404 when the rating does not belong to the product, 403 when it belongs to another user
+     */
+    protected function denyUnlessOwner(?ProductRating $productRating, Request $request): ?JsonResponse
+    {
+        if ($productRating === null) {
+            return $this->errorResponse(
+                message: MessageConstant::PRODUCT_RATING_NOT_FOUND,
+                statusCode: StatusCodeConstant::NOT_FOUND
+            );
+        }
+
+        if ($productRating->user_id !== $request->user()->id) {
+            return $this->errorResponse(
+                message: MessageConstant::PRODUCT_RATING_FORBIDDEN,
+                statusCode: StatusCodeConstant::FORBIDDEN
+            );
+        }
+
+        return null;
     }
 }
